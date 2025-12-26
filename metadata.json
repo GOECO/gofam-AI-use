@@ -1,0 +1,7 @@
+{
+  "name": "GOFAM AI",
+  "description": "A smart agriculture management application featuring AI-powered crop diagnostics, live farm monitoring, and automated irrigation suggestions, tailored for ease of use in the field.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
