@@ -1,22 +1,27 @@
 
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { analyzeTaskImage } from '../services/aiService';
 
 const AddTaskView: React.FC = () => {
   const navigate = useNavigate();
   const [priority, setPriority] = useState('Bình thường');
+  const [taskTitle, setTaskTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<{data: string, mime: string}[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages: string[] = [];
-      Array.from(files).forEach(file => {
+      // Fix: Cast Array.from(files) to File[] to avoid 'unknown' type errors for file properties and reader arguments
+      (Array.from(files) as File[]).forEach(file => {
         const reader = new FileReader();
         reader.onload = (event) => {
           if (event.target?.result) {
-            setSelectedImages(prev => [...prev, event.target?.result as string]);
+            const base64 = (event.target.result as string).split(',')[1];
+            setSelectedImages(prev => [...prev, { data: base64, mime: file.type }]);
           }
         };
         reader.readAsDataURL(file);
@@ -26,6 +31,26 @@ const AddTaskView: React.FC = () => {
 
   const removeImage = (index: number) => {
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAiMagic = async () => {
+    if (selectedImages.length === 0) return;
+    setIsAiLoading(true);
+    
+    // Gửi ảnh đầu tiên để AI phân tích và gợi ý thông tin
+    const firstImg = selectedImages[0];
+    const result = await analyzeTaskImage(firstImg.data, firstImg.mime);
+    
+    if (result) {
+      // Phân tách TITLE: ... | DESC: ... từ phản hồi của Gemini
+      const titleMatch = result.match(/TITLE:\s*(.*?)(?=\s*\||DESC:|$)/i);
+      const descMatch = result.match(/DESC:\s*(.*)/i);
+      
+      if (titleMatch) setTaskTitle(titleMatch[1].trim());
+      if (descMatch) setDescription(descMatch[1].trim());
+    }
+    
+    setIsAiLoading(false);
   };
 
   return (
@@ -39,7 +64,7 @@ const AddTaskView: React.FC = () => {
           <span className="material-symbols-outlined text-[24px]">close</span>
         </button>
         <div className="flex flex-col items-center">
-          <h2 className="text-slate-900 text-lg font-black leading-tight tracking-tight font-display">Tạo Công Việc</h2>
+          <h2 className="text-slate-900 text-lg font-black leading-tight tracking-tight font-display uppercase">Tạo Công Việc</h2>
           <span className="text-[9px] font-black text-primary-dark uppercase tracking-widest">Khu A - Nhà Kính 1</span>
         </div>
         <button className="flex size-10 items-center justify-center rounded-full hover:bg-black/5 active:scale-95 transition-all text-primary-dark font-black text-[10px] uppercase tracking-widest">
@@ -47,12 +72,78 @@ const AddTaskView: React.FC = () => {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-32">
+        {/* ATTACHMENTS SECTION */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center px-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hình ảnh đính kèm</label>
+            {selectedImages.length > 0 && (
+              <button 
+                onClick={handleAiMagic}
+                disabled={isAiLoading}
+                className="flex items-center gap-1.5 bg-primary/10 text-primary-dark px-3 py-1.5 rounded-full border border-primary/20 text-[9px] font-black uppercase tracking-widest shadow-inner transition-all hover:bg-primary/20 active:scale-95 disabled:opacity-50"
+              >
+                <span className={`material-symbols-outlined text-[16px] ${isAiLoading ? 'animate-spin' : 'icon-fill'}`}>
+                  {isAiLoading ? 'progress_activity' : 'auto_awesome'}
+                </span>
+                {isAiLoading ? 'Đang phân tích...' : 'AI Điền nhanh'}
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-4 gap-3">
+            {selectedImages.map((img, index) => (
+              <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-soft group animate-in zoom-in duration-300">
+                <img 
+                  src={`data:${img.mime};base64,${img.data}`} 
+                  className="w-full h-full object-cover" 
+                  alt={`attachment-${index}`} 
+                />
+                <button 
+                  onClick={() => removeImage(index)}
+                  className="absolute top-1 right-1 size-7 bg-red-500/90 text-white rounded-lg flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
+            ))}
+            
+            {/* THÊM ẢNH TỪ THƯ VIỆN */}
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-slate-300 hover:border-primary/40 hover:text-primary transition-all bg-white shadow-inner-soft active:scale-95"
+            >
+              <span className="material-symbols-outlined text-2xl">image</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-center leading-tight">Thư viện</span>
+            </button>
+
+            {/* MỞ CAMERA QUÉT AI CHI TIẾT */}
+            <button 
+              onClick={() => navigate('/scan')}
+              className="aspect-square rounded-2xl border-2 border-dashed border-blue-200 flex flex-col items-center justify-center gap-1 text-blue-300 hover:border-blue-400 hover:text-blue-500 transition-all bg-blue-50/30 shadow-inner-soft active:scale-95"
+            >
+              <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-center leading-tight">Quét AI</span>
+            </button>
+          </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            accept="image/*" 
+            multiple 
+          />
+          <p className="text-[9px] text-slate-400 italic px-1">* Mẹo: Quét AI chi tiết để phát hiện sâu bệnh và nấm lá chính xác hơn.</p>
+        </div>
+
         {/* TASK NAME */}
         <div className="space-y-3">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Tên công việc</label>
           <input 
             type="text" 
+            value={taskTitle}
+            onChange={(e) => setTaskTitle(e.target.value)}
             placeholder="VD: Phun thuốc phòng nấm..."
             className="w-full h-16 px-6 bg-white rounded-[2rem] border border-gray-100 shadow-soft text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all placeholder:text-slate-300"
           />
@@ -131,46 +222,12 @@ const AddTaskView: React.FC = () => {
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Ghi chú chi tiết</label>
           <textarea 
             rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Nhập mô tả công việc, lưu ý kỹ thuật..."
             className="w-full p-6 bg-white rounded-[2rem] border border-gray-100 shadow-soft text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all placeholder:text-slate-300 resize-none"
           ></textarea>
         </div>
-
-        {/* ATTACHMENTS */}
-        <div className="space-y-3">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Hình ảnh đính kèm</label>
-          <div className="grid grid-cols-4 gap-3">
-            {selectedImages.map((img, index) => (
-              <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-soft group">
-                <img src={img} className="w-full h-full object-cover" alt={`attachment-${index}`} />
-                <button 
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 size-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[16px]">close</span>
-                </button>
-              </div>
-            ))}
-            
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-slate-300 hover:border-primary/40 hover:text-primary transition-all bg-white"
-            >
-              <span className="material-symbols-outlined">add_a_photo</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-center">Tải ảnh</span>
-            </button>
-          </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            className="hidden" 
-            accept="image/*" 
-            multiple 
-          />
-        </div>
-
-        <div className="h-20"></div>
       </div>
 
       {/* FOOTER BUTTON */}
@@ -181,7 +238,7 @@ const AddTaskView: React.FC = () => {
         >
           Hủy bỏ
         </button>
-        <button className="flex-[2] py-4 px-6 rounded-2xl bg-primary text-slate-900 text-[10px] font-black uppercase tracking-widest shadow-glow shadow-primary/30 hover:bg-primary-dark transition-all active:scale-95">
+        <button className="flex-[2] py-4 px-6 rounded-2xl bg-primary text-slate-900 text-[10px] font-black uppercase tracking-widest shadow-glow shadow-primary/30 hover:bg-primary-dark transition-all active:scale-95 border border-primary-dark/10">
           Tạo công việc
         </button>
       </div>

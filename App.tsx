@@ -36,15 +36,17 @@ import DeepAnalysisView from './components/DeepAnalysisView';
 import AdoptView from './components/AdoptView';
 import AdoptDetailView from './components/AdoptDetailView';
 import MissionListView from './components/MissionListView';
+import AddRegionView from './components/AddRegionView';
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const path = location.pathname;
 
-  // Thanh điều hướng sẽ hiển thị ở các trang chính cấp 1
+  // Danh sách các route sẽ ẩn thanh điều hướng dưới cùng
   const hideNav = path === '/scan' || 
                   path.startsWith('/region/') || 
                   path === '/add-task' || 
+                  path === '/add-region' ||
                   path.startsWith('/diagnosis/') || 
                   path === '/tasks' || 
                   path === '/inventory' || 
@@ -75,14 +77,15 @@ const BottomNav: React.FC = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-gray-100 dark:border-slate-800 flex items-center justify-around px-2 pb-8 pt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.06)] max-w-md mx-auto">
       {navItems.map((item) => {
-        const isActive = path === item.path;
+        // Cải thiện logic isActive để nhận diện chính xác các route con (trừ trang chủ '/')
+        const isActive = item.path === '/' ? path === '/' : path.startsWith(item.path);
         
         if (item.center) {
           return (
             <div key={item.path} className="flex items-center justify-center -mt-12">
               <Link 
                 to={item.path} 
-                className="size-16 rounded-[2rem] bg-primary flex items-center justify-center text-slate-900 shadow-glow shadow-primary/40 border-4 border-white dark:border-slate-900 active:scale-90 transition-all group"
+                className="size-16 rounded-[2.2rem] bg-primary flex items-center justify-center text-slate-900 shadow-glow shadow-primary/40 border-4 border-white dark:border-slate-900 active:scale-90 transition-all group"
               >
                 <span className="material-symbols-outlined text-[32px] icon-fill group-hover:scale-110 transition-transform">{item.icon}</span>
               </Link>
@@ -94,7 +97,7 @@ const BottomNav: React.FC = () => {
           <Link 
             key={item.path}
             to={item.path} 
-            className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${isActive ? 'text-primary-dark scale-110' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${isActive ? 'text-primary-dark dark:text-primary scale-105' : 'text-slate-400 hover:text-slate-600'}`}
           >
             <span className={`material-symbols-outlined text-[26px] ${isActive ? 'icon-fill' : ''}`}>{item.icon}</span>
             <span className={`text-[10px] font-black uppercase tracking-tighter ${isActive ? 'opacity-100' : 'opacity-60'}`}>{item.label}</span>
@@ -120,6 +123,7 @@ const App: React.FC = () => {
           <Route path="/notifications" element={<NotificationView />} />
           <Route path="/regions" element={<RegionListView />} />
           <Route path="/region/:id" element={<RegionDetailView />} />
+          <Route path="/add-region" element={<AddRegionView />} />
           <Route path="/diagnosis/:id" element={<DiagnosisResultView />} />
           <Route path="/logs" element={<FarmingLogView />} />
           <Route path="/inventory" element={<InventoryView />} />

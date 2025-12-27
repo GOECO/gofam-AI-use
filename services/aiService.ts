@@ -5,7 +5,6 @@ import { GoogleGenAI } from "@google/genai";
  * LỜI KHUYÊN NHANH (FLASH LITE)
  */
 export const getFarmAdvice = async (userPrompt: string) => {
-  // Always create a new instance before call as per guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
@@ -23,8 +22,65 @@ export const getFarmAdvice = async (userPrompt: string) => {
 };
 
 /**
+ * CHẨN ĐOÁN SỨC KHỎE CÂY TRỒNG (GEMINI 2.5 FLASH)
+ */
+export const diagnoseCropHealth = async (base64Data: string, mimeType: string) => {
+  const aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `Bạn là chuyên gia bảo vệ thực vật AI cao cấp. 
+  Hãy phân tích hình ảnh này và trả về kết quả chẩn đoán theo cấu hình:
+  1. Tên bệnh/vấn đề (ngắn gọn).
+  2. Mức độ nguy hiểm (1-5).
+  3. Giải thích ngắn gọn nguyên nhân.
+  4. Phác đồ xử lý nhanh.
+  Định dạng phản hồi: JSON { "name": "...", "severity": 3, "cause": "...", "treatment": "..." }`;
+
+  try {
+    const response = await aiInstance.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          { inlineData: { data: base64Data, mimeType } },
+          { text: prompt }
+        ],
+      },
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("AI Diagnosis Error:", error);
+    return null;
+  }
+};
+
+/**
+ * PHÂN TÍCH HÌNH ẢNH CÔNG VIỆC (GEMINI 2.5 FLASH IMAGE)
+ */
+export const analyzeTaskImage = async (base64Data: string, mimeType: string) => {
+  const aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `Phân tích hình ảnh nông nghiệp này và gợi ý 1 tiêu đề công việc ngắn gọn (dưới 10 từ) và 1 mô tả chi tiết (dưới 50 từ). 
+  Định dạng phản hồi: TITLE: [Tiêu đề] | DESC: [Mô tả]`;
+
+  try {
+    const response = await aiInstance.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          { inlineData: { data: base64Data, mimeType } },
+          { text: prompt }
+        ],
+      },
+    });
+    return response.text;
+  } catch (error) {
+    console.error("AI Scan Error:", error);
+    return null;
+  }
+};
+
+/**
  * PHÂN TÍCH KỸ THUẬT CHUYÊN SÂU (GEMINI 3 PRO + THINKING)
- * Giải quyết các vấn đề lãng phí tài nguyên với đề xuất phần cứng & thuật toán cụ thể.
  */
 export const specializedIrrigationOptimization = async (zoneId: string, currentWaste: string) => {
   const freshAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -141,7 +197,6 @@ export const editFarmImage = async (base64Data: string, mimeType: string, prompt
  */
 export const deepAnalysis = async (prompt: string, useSearch: boolean, useMaps: boolean) => {
   const aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  // Maps grounding requires Gemini 2.5 models
   const model = useMaps ? 'gemini-2.5-flash' : 'gemini-3-pro-preview';
   const tools: any[] = [];
   if (useSearch) tools.push({ googleSearch: {} });

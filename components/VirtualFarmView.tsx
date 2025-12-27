@@ -1,9 +1,39 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const VirtualFarmView: React.FC = () => {
   const navigate = useNavigate();
+  
+  // States for virtual plant care
+  const [health, setHealth] = useState(92);
+  const [humidity, setHumidity] = useState(62);
+  const [growth, setGrowth] = useState(85);
+  const [isWatering, setIsWatering] = useState(false);
+  const [isFertilizing, setIsFertilizing] = useState(false);
+  const [isBugHunting, setIsBugHunting] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const handleAction = (type: 'water' | 'fertilize' | 'bugs') => {
+    if (type === 'water') {
+      setIsWatering(true);
+      setHumidity(prev => Math.min(prev + 10, 100));
+      setHealth(prev => Math.min(prev + 2, 100));
+      setActionMessage("Đang tưới nước cho cây... 💧");
+      setTimeout(() => { setIsWatering(false); setActionMessage(null); }, 2000);
+    } else if (type === 'fertilize') {
+      setIsFertilizing(true);
+      setHealth(prev => Math.min(prev + 5, 100));
+      setGrowth(prev => Math.min(prev + 1, 100));
+      setActionMessage("Đang bón phân hữu cơ... ✨");
+      setTimeout(() => { setIsFertilizing(false); setActionMessage(null); }, 2000);
+    } else if (type === 'bugs') {
+      setIsBugHunting(true);
+      setHealth(prev => Math.min(prev + 3, 100));
+      setActionMessage("Đang bắt sâu bệnh cho lá... 🐛");
+      setTimeout(() => { setIsBugHunting(false); setActionMessage(null); }, 2000);
+    }
+  };
 
   return (
     <div className="flex flex-col flex-1 animate-in fade-in duration-500 bg-white dark:bg-slate-950 min-h-screen font-sans overflow-x-hidden relative">
@@ -51,8 +81,8 @@ const VirtualFarmView: React.FC = () => {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div className="flex flex-col items-center">
-          <h1 className="text-base font-bold font-display tracking-tight text-slate-900 dark:text-white uppercase">Nông trại ảo</h1>
-          <span className="text-[9px] font-black text-primary tracking-[0.2em] uppercase">My Cultivation</span>
+          <h1 className="text-base font-bold font-display tracking-tight text-slate-900 dark:text-white uppercase">Vườn ảo của tôi</h1>
+          <span className="text-[9px] font-black text-primary tracking-[0.2em] uppercase"> seedling Care</span>
         </div>
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 active:scale-95 transition-all text-slate-400">
           <span className="material-symbols-outlined">settings</span>
@@ -60,10 +90,43 @@ const VirtualFarmView: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-32 relative bg-white dark:bg-slate-950">
-        {/* HERO SECTION */}
+        {/* HERO SECTION - THE PLANT */}
         <div className="relative w-full aspect-[4/5] bg-gradient-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-950 overflow-hidden rounded-b-[3rem] shadow-sm mb-6">
           <div className="absolute top-10 right-10 w-32 h-32 bg-yellow-200 dark:bg-yellow-900/20 rounded-full blur-3xl opacity-30"></div>
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-emerald-100/30 dark:from-primary/5 to-transparent"></div>
+          
+          {/* Action Overlay Message */}
+          {actionMessage && (
+            <div className="absolute top-[45%] left-1/2 -translate-x-1/2 z-[30] animate-bounce bg-white/90 dark:bg-slate-800/90 backdrop-blur-md px-6 py-2.5 rounded-full shadow-2xl border border-primary/20">
+              <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">{actionMessage}</p>
+            </div>
+          )}
+
+          {/* WATERING ANIMATION OVERLAY */}
+          {isWatering && (
+            <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center pt-20 animate-in fade-in slide-in-from-top-4 duration-500">
+              <span className="material-symbols-outlined text-blue-400 text-[120px] animate-pulse">water_drop</span>
+            </div>
+          )}
+
+          {/* FERTILIZING ANIMATION OVERLAY */}
+          {isFertilizing && (
+            <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center animate-in zoom-in duration-700">
+              <div className="relative size-40">
+                <span className="absolute top-0 left-0 material-symbols-outlined text-amber-400 text-3xl animate-bounce">sparkles</span>
+                <span className="absolute top-10 right-0 material-symbols-outlined text-amber-400 text-3xl animate-bounce [animation-delay:0.2s]">sparkles</span>
+                <span className="absolute bottom-0 left-1/3 material-symbols-outlined text-amber-400 text-3xl animate-bounce [animation-delay:0.4s]">sparkles</span>
+              </div>
+            </div>
+          )}
+
+          {/* BUG HUNTING ANIMATION */}
+          {isBugHunting && (
+            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+              <div className="size-40 border-4 border-dashed border-red-500/50 rounded-full animate-[spin_4s_linear_infinite] flex items-center justify-center">
+                <span className="material-symbols-outlined text-red-500 text-4xl animate-pulse">pest_control</span>
+              </div>
+            </div>
+          )}
           
           {/* Floating Plant Image */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] z-10 animate-float-custom">
@@ -74,7 +137,7 @@ const VirtualFarmView: React.FC = () => {
             />
           </div>
 
-          {/* Glass Status Overlay */}
+          {/* Status HUD Panel */}
           <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
             <div className="glass-panel rounded-3xl p-4 shadow-xl flex flex-col gap-3 min-w-[210px] pointer-events-auto">
               <div className="flex items-center gap-3">
@@ -85,10 +148,10 @@ const VirtualFarmView: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight truncate">Cà Chua Bi</h3>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight truncate uppercase">Cà Chua bi</h3>
                   <div className="flex items-center gap-1.5 mt-1 bg-white/50 dark:bg-slate-800/50 rounded-full px-2 py-0.5 w-fit">
                     <span className="material-symbols-outlined text-[14px] text-red-500 icon-fill">favorite</span>
-                    <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">92%</span>
+                    <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{health}%</span>
                   </div>
                 </div>
               </div>
@@ -97,23 +160,14 @@ const VirtualFarmView: React.FC = () => {
                 <div className="flex justify-between items-end mb-1.5">
                   <div className="flex flex-col">
                     <span className="text-[9px] uppercase tracking-wider text-slate-400 font-black">Giai đoạn</span>
-                    <span className="text-xs font-black text-emerald-800 dark:text-primary uppercase">Ra quả</span>
+                    <span className="text-xs font-black text-emerald-800 dark:text-primary uppercase">Cây con</span>
                   </div>
-                  <span className="text-sm font-black text-primary font-display">85%</span>
+                  <span className="text-sm font-black text-primary font-display">{growth}%</span>
                 </div>
                 <div className="relative h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-gray-100 dark:border-slate-700">
-                  <div className="absolute inset-0 flex w-full z-10 pointer-events-none">
-                    <div className="w-[25%] border-r border-white/40 h-full"></div>
-                    <div className="w-[50%] border-r border-white/40 h-full"></div>
-                  </div>
-                  <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-green-400 via-primary to-emerald-600 w-[85%] rounded-full shadow-glow">
+                  <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-green-400 via-primary to-emerald-600 rounded-full shadow-glow transition-all duration-1000" style={{ width: `${growth}%` }}>
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-custom skew-x-12"></div>
                   </div>
-                </div>
-                <div className="flex justify-between mt-1.5 text-[8px] text-slate-400 font-black tracking-tight px-0.5 uppercase">
-                  <span>Hạt</span>
-                  <span>Cây non</span>
-                  <span>Thu hoạch</span>
                 </div>
               </div>
             </div>
@@ -122,7 +176,7 @@ const VirtualFarmView: React.FC = () => {
               <div className="glass-panel px-3 py-2 rounded-2xl shadow-md flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-blue-500 icon-fill">water_drop</span>
                 <div className="flex flex-col items-end leading-none">
-                  <span className="text-[11px] font-black text-slate-900 dark:text-white">62%</span>
+                  <span className="text-[11px] font-black text-slate-900 dark:text-white">{humidity}%</span>
                   <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Độ ẩm</span>
                 </div>
               </div>
@@ -137,128 +191,110 @@ const VirtualFarmView: React.FC = () => {
           </div>
         </div>
 
-        {/* NUTRITION SECTION */}
+        {/* CARE ACTIONS SECTION */}
         <div className="px-5">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-black font-display text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">
-              <span className="material-symbols-outlined text-primary icon-fill">nutrition</span>
-              Chăm sóc dinh dưỡng
+              <span className="material-symbols-outlined text-primary icon-fill">volunteer_activism</span>
+              Chăm sóc cây con
             </h2>
-            <button onClick={() => navigate('/logs')} className="text-xs font-black text-primary-dark hover:bg-primary/5 px-3 py-1.5 rounded-xl transition-all uppercase tracking-widest">
-              Lịch sử
-            </button>
-          </div>
-
-          {/* AI ASSISTANT BANNER */}
-          <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800 rounded-[2rem] p-5 flex gap-4 items-start relative overflow-hidden group shadow-soft">
-            <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-100 dark:bg-blue-400/10 rounded-full opacity-50 blur-xl group-hover:scale-150 transition-transform duration-700"></div>
-            <div className="w-11 h-11 rounded-2xl bg-blue-500 flex items-center justify-center shrink-0 shadow-lg shadow-blue-200 dark:shadow-none z-10">
-              <span className="material-symbols-outlined text-white text-[22px] icon-fill">psychology</span>
-            </div>
-            <div className="z-10 flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest">AI Farm Assistant</span>
-                <span className="bg-blue-200/50 dark:bg-blue-500/20 backdrop-blur-sm text-blue-800 dark:text-blue-400 text-[8px] font-black px-2 py-0.5 rounded-full border border-blue-100/50 dark:border-blue-500/30">AUTO-DETECT</span>
-              </div>
-              <p className="text-[11px] text-blue-900/80 dark:text-blue-200/60 leading-relaxed font-bold">
-                Cây đang trong giai đoạn ra quả, nồng độ Kali trong đất thấp. Khuyên dùng <span className="font-black text-blue-700 dark:text-blue-400 underline decoration-blue-300 decoration-2">Phân Hữu Cơ</span> để cải thiện chất lượng quả.
-              </p>
+            <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1 rounded-full border border-yellow-100 dark:border-yellow-900/40">
+              <span className="material-symbols-outlined text-yellow-500 text-[16px] icon-fill">monetization_on</span>
+              <span className="text-[10px] font-black text-yellow-700 dark:text-yellow-500">1,250 Xu</span>
             </div>
           </div>
 
-          {/* HORIZONTAL CARDS */}
-          <div className="relative">
-            <div className="overflow-x-auto hide-scrollbar pb-8 -mx-5 px-5 flex gap-5 snap-x">
-              {/* AI Recommended Card */}
-              <div className="snap-center shrink-0 w-[150px] relative group cursor-pointer">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-slate-900 text-[9px] font-black px-4 py-1.5 rounded-full shadow-glow z-10 whitespace-nowrap border-[3px] border-white dark:border-slate-900 uppercase tracking-widest">
-                  AI Khuyên dùng
+          <div className="grid grid-cols-3 gap-4 mb-8">
+             <button 
+               onClick={() => handleAction('water')}
+               disabled={isWatering || isFertilizing || isBugHunting}
+               className="flex flex-col items-center gap-3 p-4 bg-white dark:bg-card-dark rounded-3xl border border-gray-100 dark:border-white/5 shadow-soft active:scale-90 transition-all group disabled:opacity-50"
+             >
+                <div className="size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 shadow-inner group-hover:bg-blue-100 transition-colors">
+                  <span className="material-symbols-outlined text-[32px] icon-fill">water_drop</span>
                 </div>
-                <div className="h-full bg-white dark:bg-slate-900 rounded-[2.2rem] p-5 border-2 border-primary shadow-deep flex flex-col gap-4 relative overflow-hidden active:scale-95 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center self-center group-hover:bg-green-100 transition-colors shadow-inner">
-                    <span className="material-symbols-outlined text-green-600 dark:text-primary icon-fill text-[26px]">compost</span>
-                  </div>
-                  <div className="text-center">
-                    <h4 className="text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Phân hữu cơ</h4>
-                    <p className="text-[9px] text-slate-400 mt-1 font-bold uppercase tracking-widest">Tăng độ màu mỡ</p>
-                  </div>
-                  <div className="mt-1 pt-4 border-t border-dashed border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <span className="text-[11px] font-black text-primary-dark dark:text-primary bg-primary/10 px-2.5 py-1 rounded-lg">5kg</span>
-                    <span className="material-symbols-outlined text-[24px] text-primary hover:scale-110 transition-transform icon-fill">add_circle</span>
-                  </div>
-                </div>
-              </div>
+                <span className="text-[10px] font-black uppercase text-slate-400 group-hover:text-blue-500">Tưới nước</span>
+             </button>
 
-              {/* Card 2 */}
-              <div className="snap-center shrink-0 w-[150px] relative cursor-pointer group">
-                <div className="h-full bg-gray-50 dark:bg-slate-800/50 rounded-[2.2rem] p-5 border border-gray-100 dark:border-slate-700 hover:border-orange-200 dark:hover:border-orange-500/30 hover:bg-white dark:hover:bg-slate-800 transition-all flex flex-col gap-4 active:scale-95 duration-300">
-                  <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center self-center shadow-inner">
-                    <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-[26px]">science</span>
-                  </div>
-                  <div className="text-center">
-                    <h4 className="text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Phân NPK</h4>
-                    <p className="text-[9px] text-slate-400 mt-1 font-bold uppercase tracking-widest">Kích thích ra quả</p>
-                  </div>
-                  <div className="mt-1 pt-4 border-t border-dashed border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">12kg</span>
-                    <span className="material-symbols-outlined text-[24px] text-slate-300 dark:text-slate-600 group-hover:text-orange-500 transition-colors">add_circle</span>
-                  </div>
+             <button 
+               onClick={() => handleAction('fertilize')}
+               disabled={isWatering || isFertilizing || isBugHunting}
+               className="flex flex-col items-center gap-3 p-4 bg-white dark:bg-card-dark rounded-3xl border border-gray-100 dark:border-white/5 shadow-soft active:scale-90 transition-all group disabled:opacity-50"
+             >
+                <div className="size-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-500 shadow-inner group-hover:bg-emerald-100 transition-colors">
+                  <span className="material-symbols-outlined text-[32px] icon-fill">compost</span>
                 </div>
-              </div>
+                <span className="text-[10px] font-black uppercase text-slate-400 group-hover:text-emerald-500">Bón phân</span>
+             </button>
 
-              {/* Card 3 */}
-              <div className="snap-center shrink-0 w-[150px] relative cursor-pointer group">
-                <div className="h-full bg-gray-50 dark:bg-slate-800/50 rounded-[2.2rem] p-5 border border-gray-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-white dark:hover:bg-slate-800 transition-all flex flex-col gap-4 active:scale-95 duration-300">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center self-center shadow-inner">
-                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[26px]">water_drop</span>
-                  </div>
-                  <div className="text-center">
-                    <h4 className="text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Nước vi sinh</h4>
-                    <p className="text-[9px] text-slate-400 mt-1 font-bold uppercase tracking-widest">Bổ sung khoáng</p>
-                  </div>
-                  <div className="mt-1 pt-4 border-t border-dashed border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">20L</span>
-                    <span className="material-symbols-outlined text-[24px] text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors">add_circle</span>
-                  </div>
+             <button 
+               onClick={() => handleAction('bugs')}
+               disabled={isWatering || isFertilizing || isBugHunting}
+               className="flex flex-col items-center gap-3 p-4 bg-white dark:bg-card-dark rounded-3xl border border-gray-100 dark:border-white/5 shadow-soft active:scale-90 transition-all group disabled:opacity-50"
+             >
+                <div className="size-14 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 shadow-inner group-hover:bg-red-100 transition-colors">
+                  <span className="material-symbols-outlined text-[32px] icon-fill">pest_control</span>
                 </div>
-              </div>
+                <span className="text-[10px] font-black uppercase text-slate-400 group-hover:text-red-500">Bắt sâu</span>
+             </button>
+          </div>
 
-              <div className="snap-center shrink-0 w-24 relative cursor-pointer flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-300 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all active:scale-90">
-                  <span className="material-symbols-outlined text-[32px]">add</span>
-                </div>
+          {/* AI ADVICE FOR VIRTUAL CARE */}
+          <div className="bg-gradient-to-r from-primary/10 to-emerald-50 dark:from-primary/5 dark:to-slate-900 rounded-[2.5rem] p-6 border border-primary/20 shadow-soft relative overflow-hidden group">
+            <div className="absolute -right-4 -top-4 size-24 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>
+            <div className="flex gap-4 relative z-10">
+              <div className="size-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-soft">
+                <span className="material-symbols-outlined text-primary-dark text-[28px] icon-fill">psychology</span>
+              </div>
+              <div>
+                <p className="text-[11px] font-black text-primary-dark uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                  <span className="size-1.5 bg-primary rounded-full animate-pulse shadow-glow"></span>
+                  Gợi ý từ AI Chăm sóc
+                </p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold leading-relaxed">
+                  Cây của bác đang <span className="text-primary-dark font-black underline decoration-primary/30">thiếu độ ẩm nhẹ</span>. Hãy tưới thêm 200ml nước để duy trì tốc độ sinh trưởng tối ưu nhất nhé!
+                </p>
               </div>
             </div>
-          </div>
-          
-          <div className="text-center">
-            <p className="text-[10px] font-black text-slate-300 dark:text-slate-600 flex items-center justify-center gap-2 animate-pulse uppercase tracking-[0.2em]">
-              <span className="material-symbols-outlined text-[16px]">touch_app</span>
-              Chạm và giữ để xem chi tiết
-            </p>
           </div>
         </div>
 
-        {/* BOTTOM ACTION */}
+        {/* REWARD MISSIONS QUICK ACCESS */}
         <div className="px-5 mt-8 mb-10">
-          <button className="w-full py-5 rounded-[2.2rem] bg-slate-900 dark:bg-primary text-white dark:text-slate-900 shadow-xl shadow-slate-900/10 dark:shadow-primary/20 flex items-center justify-between px-6 group active:scale-[0.98] transition-all border border-white/10">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 dark:bg-slate-900/20 flex items-center justify-center relative overflow-hidden shadow-inner">
-                <span className="material-symbols-outlined text-primary dark:text-slate-900 text-3xl z-10 icon-fill">videocam</span>
-                <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping z-10"></span>
-                <div className="absolute inset-0 bg-primary/20 scale-0 group-hover:scale-100 transition-transform rounded-full"></div>
-              </div>
-              <div className="text-left">
-                <h3 className="text-base font-black uppercase tracking-tight group-hover:text-primary dark:group-hover:text-slate-700 transition-colors">Xem chi tiết thực tế</h3>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-700/60 uppercase tracking-widest mt-0.5">Camera AI & IoT Sensors</p>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-2xl bg-white/10 dark:bg-slate-900/10 flex items-center justify-center group-hover:bg-primary group-hover:text-slate-900 dark:group-hover:bg-slate-900 dark:group-hover:text-primary transition-all">
-              <span className="material-symbols-outlined text-[20px] font-black">arrow_forward</span>
-            </div>
-          </button>
+           <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Nhiệm vụ hàng ngày</h3>
+              <button onClick={() => navigate('/missions')} className="text-[10px] font-black text-primary uppercase tracking-widest">Xem tất cả</button>
+           </div>
+           
+           <div className="space-y-3">
+              {[
+                { title: 'Tưới nước buổi sáng', reward: '+10 Xu', done: true },
+                { title: 'Chụp ảnh chẩn đoán AI', reward: '+50 Xu', done: false },
+                { title: 'Chia sẻ vườn ảo cho bạn bè', reward: '+100 Xu', done: false },
+              ].map((mission, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-card-dark rounded-2xl border border-gray-50 dark:border-white/5 shadow-soft">
+                  <div className="flex items-center gap-3">
+                    <div className={`size-6 rounded-full border-2 flex items-center justify-center ${mission.done ? 'bg-primary border-primary text-slate-900' : 'border-gray-200 text-transparent'}`}>
+                       <span className="material-symbols-outlined text-[14px] font-black">check</span>
+                    </div>
+                    <span className={`text-[11px] font-bold ${mission.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200'}`}>{mission.title}</span>
+                  </div>
+                  <span className="text-[9px] font-black text-yellow-600 dark:text-yellow-500 uppercase">{mission.reward}</span>
+                </div>
+              ))}
+           </div>
         </div>
       </main>
+
+      {/* FLOATING ACTION OVERLAY FOR METAVERSE FEEL */}
+      <div className="fixed bottom-24 right-6 z-[60] flex flex-col gap-4">
+         <button className="size-14 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-primary">
+            <span className="material-symbols-outlined text-[28px] icon-fill text-primary">view_in_ar</span>
+         </button>
+         <button className="size-12 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform border border-gray-100 dark:border-white/10">
+            <span className="material-symbols-outlined text-2xl">photo_camera</span>
+         </button>
+      </div>
     </div>
   );
 };

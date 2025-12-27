@@ -1,9 +1,44 @@
-
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const SellProductView: React.FC = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImages, setSelectedImages] = useState<{data: string, type: string}[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      // Fix: Cast Array.from(files) to File[] to avoid 'unknown' type errors for file properties and reader arguments
+      const filesArray = Array.from(files) as File[];
+      filesArray.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setSelectedImages(prev => [...prev, { 
+              data: event.target?.result as string, 
+              type: file.type 
+            }]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    // Reset input to allow re-uploading same file if needed
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const setAsMain = (index: number) => {
+    if (index === 0) return;
+    const newImages = [...selectedImages];
+    const [target] = newImages.splice(index, 1);
+    newImages.unshift(target);
+    setSelectedImages(newImages);
+  };
 
   return (
     <div className="flex flex-col flex-1 animate-in fade-in duration-500 bg-background-light min-h-screen font-sans">
@@ -37,6 +72,72 @@ const SellProductView: React.FC = () => {
             />
           </div>
 
+          <div className="space-y-3">
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Ảnh sản phẩm thực tế</label>
+            <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x pt-2">
+              {/* Upload Button */}
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 flex flex-col items-center justify-center size-28 rounded-[2rem] border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all group snap-start shadow-inner-soft"
+              >
+                <span className="material-symbols-outlined text-primary text-[32px] group-hover:scale-110 transition-transform icon-fill">add_a_photo</span>
+                <span className="text-[9px] font-black text-primary-dark mt-1 uppercase tracking-widest">Thêm ảnh</span>
+              </button>
+
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*" 
+                multiple 
+              />
+              
+              {/* Dynamic Image List */}
+              {selectedImages.map((img, index) => (
+                <div 
+                  key={index} 
+                  className={`relative shrink-0 size-28 rounded-[2rem] overflow-hidden shadow-deep border-2 transition-all snap-start group ${index === 0 ? 'border-primary' : 'border-gray-100'}`}
+                >
+                  <img 
+                    className="size-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    src={img.data} 
+                    alt={`Product ${index}`}
+                  />
+                  
+                  {/* Overlay Badge for Main Image */}
+                  {index === 0 && (
+                    <div className="absolute top-0 inset-x-0 bg-primary/90 py-1 flex items-center justify-center shadow-sm">
+                      <span className="text-[7px] font-black text-slate-900 uppercase tracking-[0.1em]">Ảnh đại diện</span>
+                    </div>
+                  )}
+
+                  {/* Actions Overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    {index !== 0 && (
+                      <button 
+                        onClick={() => setAsMain(index)}
+                        className="size-8 bg-white rounded-xl flex items-center justify-center text-primary-dark shadow-lg active:scale-90 transition-transform"
+                        title="Đặt làm ảnh bìa"
+                      >
+                        <span className="material-symbols-outlined text-[18px] icon-fill">star</span>
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => removeImage(index)}
+                      className="size-8 bg-white rounded-xl flex items-center justify-center text-red-500 shadow-lg active:scale-90 transition-transform"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1 leading-relaxed">
+              * Ảnh đầu tiên sẽ là ảnh hiển thị chính. Nhấn vào ảnh để đổi vị trí.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Danh mục</label>
             <div className="relative">
@@ -49,37 +150,6 @@ const SellProductView: React.FC = () => {
               </select>
               <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">expand_more</span>
             </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Ảnh/Video sản phẩm</label>
-            <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar snap-x">
-              <button className="shrink-0 flex flex-col items-center justify-center size-24 rounded-3xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all group snap-start">
-                <span className="material-symbols-outlined text-primary text-[28px] group-hover:scale-110 transition-transform icon-fill">add_a_photo</span>
-                <span className="text-[9px] font-black text-primary-dark mt-1 uppercase tracking-widest">Thêm ảnh</span>
-              </button>
-              
-              <div className="relative shrink-0 size-24 rounded-3xl overflow-hidden shadow-soft border border-gray-100 snap-start group">
-                <img 
-                  className="size-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEJUimhgu4ag08QyZm_hgAa5QU-Sql9EK5DRhhx_AZkNFoQXnQilKq7jOyaha1qFa6rZEQFVP5OQjgBVG_AQ3v4SctQfnRuwKn2exLz2RvvWv4zXX--cZwPysfWPYnye75FWJHCIaTMf8rmpwCxqMsS3biu4CKnUNgGi3SokUAIcnJkXOxKf9yvAiKhXEGi9dQFODTI1vOIHb0fqwJzmRmHxnvYZU5SVXxzoVVASCmv9TqX-nCS5H3rvknTHuGhGYrnFf-Velex9AJ" 
-                />
-                <button className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-red-500 backdrop-blur-md rounded-xl p-1 text-white transition-all active:scale-90">
-                  <span className="material-symbols-outlined text-[16px]">close</span>
-                </button>
-              </div>
-
-              <div className="relative shrink-0 size-24 rounded-3xl overflow-hidden shadow-soft border border-gray-100 snap-start group">
-                <img 
-                  className="size-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAVJvo8ZnIYPEZl70BCEH0AHxTRrrYYsoyJqzWvvtgJPbnfxL5noA744figXYWbHQYUq67zdbe0waneFF3wenxUgJLxnOQK2Foj9OubJuen5hq2h2mGZxB-K_gSZ5YScZAzpM7Sy86lndyCm66m4CzaaNe0Mu_o90UBIR_3ypuYhqNZuRKiVUOCjCo9Zeg4zo8Q7w0f5my8bhmlV1MrsSLDhd8o226cZvQTEUiZTS5d04tNVSccuCxeEGsckSpVdmsYaXDwJDIqkKM" 
-                />
-                <button className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-red-500 backdrop-blur-md rounded-xl p-1 text-white transition-all active:scale-90">
-                  <span className="material-symbols-outlined text-[16px]">close</span>
-                </button>
-              </div>
-            </div>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Tối đa 5 ảnh hoặc 1 video ngắn.</p>
           </div>
 
           <div className="space-y-2">
@@ -142,21 +212,6 @@ const SellProductView: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Vị trí kho/farm</label>
-            <div className="relative group cursor-pointer">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-primary-dark icon-fill">location_on</span>
-              </div>
-              <select className="w-full h-14 appearance-none rounded-2xl border-none bg-white shadow-soft ring-1 ring-gray-100 focus:ring-2 focus:ring-primary/40 pl-12 pr-12 text-sm font-bold text-slate-900 transition-all cursor-pointer">
-                <option value="farm1">Nông trại Xanh - Đồng Nai (Mặc định)</option>
-                <option value="farm2">Vườn rau sạch - Đà Lạt</option>
-                <option value="new">+ Thêm vị trí mới</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">expand_more</span>
-            </div>
-          </div>
         </section>
 
         <div className="h-px bg-gray-100 w-full"></div>
@@ -180,31 +235,6 @@ const SellProductView: React.FC = () => {
                 <span className="material-symbols-outlined text-[26px]">qr_code_scanner</span>
               </button>
             </div>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1 leading-relaxed">Liên kết dữ liệu nuôi trồng từ IoT để tăng uy tín.</p>
-          </div>
-
-          <div className="space-y-4">
-            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Chứng nhận chất lượng</label>
-            
-            <div className="flex items-center justify-between p-4 rounded-[1.5rem] ring-1 ring-gray-100 bg-white shadow-soft group hover:ring-primary/20 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="size-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shadow-inner">
-                  <span className="material-symbols-outlined text-[24px] icon-fill">verified</span>
-                </div>
-                <div>
-                  <p className="text-sm font-black text-slate-900 tracking-tight">VietGAP Certified</p>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Đã xác thực • 12/2024</p>
-                </div>
-              </div>
-              <button className="size-9 rounded-xl flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all active:scale-90">
-                <span className="material-symbols-outlined text-[20px]">delete</span>
-              </button>
-            </div>
-
-            <button className="flex items-center justify-center gap-2 w-full h-14 rounded-[1.5rem] border-2 border-dashed border-gray-200 bg-transparent hover:bg-gray-50 hover:border-primary/40 transition-all text-slate-400 hover:text-primary-dark font-black text-[10px] uppercase tracking-widest">
-              <span className="material-symbols-outlined text-[20px]">upload_file</span>
-              Tải lên chứng nhận (PDF, JPG)
-            </button>
           </div>
         </section>
 
@@ -213,7 +243,10 @@ const SellProductView: React.FC = () => {
 
       {/* STICKY BOTTOM ACTION */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100 p-5 pb-10 shadow-deep max-w-md mx-auto">
-        <button className="w-full bg-primary hover:bg-primary-dark text-slate-900 font-black text-sm h-16 rounded-[2rem] shadow-glow shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-[0.15em] border border-primary-dark/10">
+        <button 
+          disabled={selectedImages.length === 0}
+          className="w-full bg-primary hover:bg-primary-dark disabled:bg-gray-200 disabled:text-slate-400 text-slate-900 font-black text-sm h-16 rounded-[2rem] shadow-glow shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-[0.15em] border border-primary-dark/10"
+        >
           <span className="material-symbols-outlined text-[26px] font-black">storefront</span>
           Đăng bán sản phẩm
         </button>

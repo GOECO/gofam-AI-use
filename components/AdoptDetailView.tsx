@@ -5,8 +5,33 @@ import { useNavigate, useParams } from 'react-router-dom';
 const AdoptDetailView: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [isAdopting, setIsAdopting] = useState(false);
 
   const isLivestock = id === 'a2';
+
+  const handleAdopt = () => {
+    setIsAdopting(true);
+    // Giả lập quá trình xử lý blockchain/thanh toán
+    setTimeout(() => {
+      navigate('/virtual-farm');
+    }, 1500);
+  };
+
+  if (isAdopting) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-950 text-white p-10 text-center animate-in fade-in duration-500">
+        <div className="relative size-48 mb-10">
+          <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping"></div>
+          <div className="absolute inset-4 rounded-full border-2 border-primary/40 animate-[spin_3s_linear_infinite]"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[64px] text-primary icon-fill">potted_plant</span>
+          </div>
+        </div>
+        <h2 className="text-xl font-black uppercase tracking-widest mb-4">Đang xác nhận nhận nuôi...</h2>
+        <p className="text-sm text-slate-400 leading-relaxed max-w-xs">Giao dịch đang được xác thực trên Blockchain GoFam. Bạn sẽ được chuyển đến vườn ảo ngay!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 animate-in fade-in duration-500 bg-background-light dark:bg-background-dark min-h-screen font-display text-slate-900 dark:text-white overflow-x-hidden">
@@ -233,7 +258,10 @@ const AdoptDetailView: React.FC = () => {
             <span className="material-symbols-outlined text-xl">chat</span>
             <span>Liên hệ</span>
           </button>
-          <button className="flex-[2] bg-primary hover:bg-primary-dark text-slate-900 font-black text-[11px] uppercase tracking-[0.2em] py-4 px-6 rounded-2xl shadow-glow shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 border border-primary-dark/10">
+          <button 
+            onClick={handleAdopt}
+            className="flex-[2] bg-primary hover:bg-primary-dark text-slate-900 font-black text-[11px] uppercase tracking-[0.2em] py-4 px-6 rounded-2xl shadow-glow shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 border border-primary-dark/10"
+          >
             <span>Nhận nuôi gói này</span>
             <span className="material-symbols-outlined text-xl">arrow_forward</span>
           </button>
